@@ -23,7 +23,7 @@ class RedisCluster(object):
     __created_instances__ = dict()
 
     def __init__(self, primary, readers=None):
-        self.__primary = primary  # 存放RedisManager实例
+        self.__primary = primary
         self.__readers = readers
 
     @classmethod
@@ -64,16 +64,9 @@ class RedisCluster(object):
             readers = None
         return cls.create(primary=primary, readers=readers)
 
-    def pipeline(self, transaction=True, shard_hint=None, primary=False):
-        """
-        默认reader, 若有写操作则需要指定primary=True
-        """
-        _instance = self.__primary if primary else self.get_reader()
-        return _instance.pipeline(transaction=transaction, shard_hint=shard_hint)
-
     def get_instance(self, primary=False):
         """
-        分配一个读节点, 若没有读节点则返回主节点
+        randomly assign a redis instance
         """
         if primary is True or self.__readers is None:
             return self.__primary
@@ -81,7 +74,7 @@ class RedisCluster(object):
             return self.__readers[random.randint(0, len(self.__readers) - 1)]
 
     def __getattr__(self, item):
-        if 'scan' in item:
+        if item == 'pipeline' or 'scan' in item:
             raise Exception('use get_instance for scanning')
         elif item in READING_FUNCTIONS:
             instance = self.get_instance(primary=False)

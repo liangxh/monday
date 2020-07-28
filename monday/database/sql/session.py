@@ -1,6 +1,7 @@
-from greenlet import getcurrent as get_ident
+import json
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
+from monday.common.utils import get_ident
 
 
 class SessionManager(object):
@@ -15,7 +16,7 @@ class SessionManager(object):
     @classmethod
     def _register(cls, session):
         """
-        注册本线程用到的 session
+        record the sessions used in this thread
         """
         ident = get_ident()
         if ident not in cls.__local_sessions__:
@@ -23,24 +24,33 @@ class SessionManager(object):
         cls.__local_sessions__[ident].add(session)
 
     @classmethod
-    def get(cls, name, url, conf=None):
+    def get(cls, url, conf=None):
         """
-        获取要用的 session
+        :param url: {schema}://{username}:{password}@{host}:{port}/{database}
+        :param conf: dict or None, used in create_engine(...)
+        :return:
         """
         conf = conf if conf is not None else dict()
-        if name not in cls.__created_sessions__:
+        if url not in cls.__created_sessions__:
             engine = create_engine(url, **conf)
             session = scoped_session(sessionmaker(bind=engine, autoflush=False))
-            cls.__created_sessions__[name] = session
+            cls.__created_sessions__[url] = {
+                'session': session,
+                'conf': conf
+            }
         else:
-            session = cls.__created_sessions__[name]
+            created = cls.__created_sessions__[url]
+            if not conf == created['conf']:
+                raise Exception(
+                    'repeated target ({}) with different config: {} != {}'.format(url, created['conf'], conf))
+            session = created['session']
         cls._register(session)
         return session
 
     @classmethod
     def get_by_conf(cls, name=None, path_prefix=None):
         """
-        使用 monday 自带的 conf 模块读取配置
+        get a session, using the configuration read by monday's conf module
         """
         from monday.common.conf import conf
 
@@ -53,12 +63,12 @@ class SessionManager(object):
             sess_conf['user'], sess_conf['pw'],
             sess_conf['host'], sess_conf.get('port', cls.DEFAULT_PORT), sess_conf['db']
         )
-        return cls.get(name=path, url=url, conf=sess_conf.get('conf', dict()))
+        return cls.get(url=url, conf=sess_conf.get('conf', dict()))
 
     @classmethod
     def remove(cls):
         """
-        释放当前线程用到的 session 资源
+        release the sessions used in the thread
         """
         ident = get_ident()
         for session in cls.__local_sessions__.pop(ident, list()):
