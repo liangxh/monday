@@ -19,10 +19,6 @@ class Conf(object):
         self.key = self.DEFAULT if filename is None else self._filename
 
     @property
-    def filename(self):
-        return self._filename
-
-    @property
     def data(self):
         if self.key not in self.__class__.__shared_data__:
             with open(self._filename, 'r') as file_obj:

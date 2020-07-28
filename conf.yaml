@@ -1,0 +1,19 @@
+database:
+  sql:
+    session:
+      default:
+        host: localhost
+        user: username
+        pw: password
+        db: monday
+        # conf:
+        #   pool_size:
+        #   pool_recycle:
+  redis:
+    cluster:
+      default:
+        # $ redis-server --port 6379
+        # $ redis-server --port 6380 --replicaof 127.0.0.1 6379
+        primary: redis://127.0.0.1:6379/0
+        readers:
+          - redis://127.0.0.1:6380/0
