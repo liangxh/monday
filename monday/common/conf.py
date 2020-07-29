@@ -27,16 +27,16 @@ class Conf(object):
 
     def get(self, path, force=True):
         keys = path.split('.')
-        parent = self.data
+        node = self.data
         for key in keys:
             try:
-                parent = parent[key]
+                node = node[key]
             except KeyError:
                 if force:
                     raise Exception('path not found: {}'.format(path))
                 else:
                     return None
-        return parent
+        return node
 
 
 conf = Conf()

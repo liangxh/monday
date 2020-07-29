@@ -2,10 +2,7 @@ database:
   sql:
     session:
       default:
-        host: localhost
-        user: username
-        pw: password
-        db: monday
+        url: mysql+pymysql://user:pw@127.0.0.1:3306/monday
         # conf:
         #   pool_size:
         #   pool_recycle:

@@ -7,6 +7,9 @@ BaseModel = declarative_base()
 class BaseModelMixin:
     @classmethod
     def show_create_table(cls):
+        """
+        生成 CREATE TABLE, 手动建表用
+        """
         return str(CreateTable(cls.__table__)).replace('\"', '`').strip() + ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;'
 
     def to_dict(self):
