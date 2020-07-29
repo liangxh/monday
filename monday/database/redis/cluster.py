@@ -1,4 +1,3 @@
-import urllib
 import random
 from redis import Redis
 
@@ -27,25 +26,30 @@ class RedisCluster(object):
         self.__readers = readers
 
     @classmethod
-    def _get_redis_instance(cls, url):
+    def _get_redis_instance(cls, url, conf=None):
         if url not in cls.__created_instances__:
-            parsed = urllib.parse.urlparse(url)
-            conf = dict(host=parsed.hostname, port=parsed.port, db=int(parsed.path[1:].strip() or '0'))
-            params = urllib.parse.parse_qs(parsed.query)
-            for k, v in params.items():
-                if k not in ['host', 'port', 'db']:
-                    conf[k] = v[0]
-            rds = Redis(decode_responses=True, **conf)
-            cls.__created_instances__[url] = rds
-        return cls.__created_instances__[url]
+            instance = Redis.from_url(url=url, decode_responses=True, **conf or dict())
+            cls.__created_instances__[url] = {
+                'instance': instance,
+                'conf': conf
+            }
+        else:
+            record = cls.__created_instances__[url]
+            _conf = record['conf']
+            if _conf != conf:
+                raise Exception('repeated url {} with different conf: {} != {}'.format(
+                    url, _conf, conf
+                ))
+            instance = record['instance']
+        return instance
 
     @classmethod
     def create(cls, primary=None, readers=None):
-        primary_instance = cls._get_redis_instance(url=primary)
+        primary_instance = cls._get_redis_instance(**primary)
         if readers is not None:
             reader_instances = list()
             for reader in readers:
-                reader_instances.append(cls._get_redis_instance(url=reader))
+                reader_instances.append(cls._get_redis_instance(**reader))
         else:
             reader_instances = None
         return cls(primary=primary_instance, readers=reader_instances)

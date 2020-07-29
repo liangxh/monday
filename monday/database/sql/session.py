@@ -30,9 +30,8 @@ class SessionManager(object):
         :param conf: dict or None, used in create_engine(...)
         :return:
         """
-        conf = conf if conf is not None else dict()
         if url not in cls.__created_sessions__:
-            engine = create_engine(url, **conf)
+            engine = create_engine(url, **conf or dict())
             session = scoped_session(sessionmaker(bind=engine, autoflush=False))
             cls.__created_sessions__[url] = {
                 'session': session,
