@@ -1,12 +1,9 @@
-import json
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from monday.common.utils import get_ident
 
 
 class SessionManager(object):
-    SCHEMA = 'mysql+pymysql'
-    DEFAULT_PORT = 3306
     DEFAULT_CONF_PREFIX = 'database.sql.session'
     DEFAULT_CONF_NAME = 'default'
 
@@ -44,6 +41,7 @@ class SessionManager(object):
         :return:
         """
         if url not in cls.__created_sessions__:
+            # 该 url 对应的 session 第一次创建
             engine = create_engine(url, **conf or dict())
             session = scoped_session(sessionmaker(bind=engine, autoflush=False))
             cls.__created_sessions__[url] = {
@@ -51,6 +49,8 @@ class SessionManager(object):
                 'conf': conf
             }
         else:
+            # [design]
+            # 相同的url只允许用相同的配置, 从维护的角度来说同一个url不应该配在两个地方
             created = cls.__created_sessions__[url]
             if not conf == created['conf']:
                 raise Exception(
@@ -60,16 +60,17 @@ class SessionManager(object):
         return session
 
     @classmethod
-    def from_conf(cls, name=None, path_prefix=None):
+    def from_conf(cls, name=None, prefix=None):
         """
         从 monday 的默认位置读取配置
         """
+        # [design]
+        # 这里没有用 name=DEFAULT_CONF_NAME, prefix=DEFAULT_CONF_PREFIX
+        # 因为后面 monday.aws.redshift.session.SessionManager 要继承这个模块
+        # 但是覆盖类成员变量 DEFAULT_CONF_PREFIX 的话函数的预设值不会相应的被覆盖
         from monday.common.conf import conf
 
-        name = name if name is not None else cls.DEFAULT_CONF_NAME
-        path_prefix = path_prefix if path_prefix is not None else cls.DEFAULT_CONF_PREFIX
-        path = '{}.{}'.format(path_prefix, name)
-        sess_conf = conf.get(path)
+        sess_conf = conf.get(path=name or cls.DEFAULT_CONF_NAME, prefix=prefix or cls.DEFAULT_CONF_PREFIX)
         return cls.get(url=sess_conf['url'], conf=sess_conf.get('conf'))
 
     @classmethod
@@ -77,7 +78,10 @@ class SessionManager(object):
         """
         释放当前 线程/协程 下该用到的 Session 的连接
         """
+        # [why]
+        # scoped_session 在底层会引用当前 线程/协程 的实例, 不会影响其他 线程/协程
         ident = get_ident()
+        print(len(cls.__local_sessions__[ident]))
         for session in cls.__local_sessions__.pop(ident, list()):
             session.remove()
 

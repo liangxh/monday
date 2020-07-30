@@ -69,16 +69,13 @@ class RedisCluster(object):
         return cls(primary=primary_instance, readers=reader_instances)
 
     @classmethod
-    def from_conf(cls, name=None, path_prefix=None):
+    def from_conf(cls, name=None, prefix=None):
         """
         从 monday 的默认位置读取配置
         """
         from monday.common.conf import conf
 
-        name = name if name is not None else cls.DEFAULT_CONF_NAME
-        path_prefix = path_prefix if path_prefix is not None else cls.DEFAULT_CONF_PREFIX
-        path = '{}.{}'.format(path_prefix, name)
-        _conf = conf.get(path)
+        _conf = conf.get(path=name or cls.DEFAULT_CONF_NAME, prefix=prefix or cls.DEFAULT_CONF_PREFIX)
         primary = _conf.get('primary')
         readers = _conf.get('readers')
         if isinstance(readers, list) and len(readers) == 0:
@@ -99,7 +96,7 @@ class RedisCluster(object):
         根据操作的类型判断使用读节点或写节点
         """
         if item == 'pipeline' or 'scan' in item:
-            # 这两种操作实要落在同一个节点上,
+            # 这两种操作实要落在同一个节点上
             raise Exception('use get_instance for scanning')
         elif item in READING_FUNCTIONS:
             # 若为预设的读操作则分配读节点

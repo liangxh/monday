@@ -15,3 +15,31 @@ database:
           url: redis://127.0.0.1:6379/0
         readers:
           - url: redis://127.0.0.1:6380/0
+
+aws:
+  iam:
+    users:
+      s3:
+        aws_access_key_id: ...
+        aws_secret_access_key: ...
+      firehose:
+        aws_access_key_id: ...
+        aws_secret_access_key: ...
+  s3:
+    default:
+      bucket: Bucket
+      # 此处的 iam_user 对应 aws.iam.users 下的配置
+      iam_user: s3
+    fakes3:
+      bucket: mybucket
+      endpoint_url: http://localhost:4567/
+  redshift:
+    local_proxy:
+      url: postgresql://username:pw@localhost:80/db
+  firehose:
+    streams:
+      A: StreamNameA
+
+web:
+  app:
+    name: monday

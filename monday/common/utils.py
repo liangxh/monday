@@ -1,4 +1,5 @@
 
+# [why]
 # 参考 werkzeug/local.py
 # 用以获取当前 协程/线程 的唯一标识
 try:

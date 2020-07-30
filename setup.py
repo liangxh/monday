@@ -3,18 +3,19 @@ from setuptools import setup, find_packages
 __version__ = '1.0.0'
 
 
-install_requires = {
-    'requests'
-    'boto3'
+install_requires = [
+    'requests',
+    'boto3',
     'commandr'
-}
+]
 
 extra_requires = {
     'sql': ['SQLAlchemy'],
-    'redis': ['redis']
+    'redis': ['redis'],
+    'redshift': ['psycopg2']
 }
 
-tests_require = {}
+tests_require = []
 
 setup(
     name='monday',
