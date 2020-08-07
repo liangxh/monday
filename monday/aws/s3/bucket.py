@@ -37,22 +37,22 @@ class S3Bucket(object):
     def put(self, src_path, key, extra_args=None):
         self.transfer.upload_file(src_path, self.bucket, key, extra_args=extra_args)
 
-    def get_file_obj(self, key, file_obj, ignore_if_not_exists=True):
+    def get_file_obj(self, key, file_obj, ignore_if_not_exist=True):
         try:
             self.client.download_fileobj(self.bucket, key, file_obj)
             file_obj.seek(0)
         except ClientError as e:
-            if e.response['Error']['Code'] == '404' and ignore_if_not_exists:
+            if e.response['Error']['Code'] == '404' and ignore_if_not_exist:
                 return False
             else:
                 raise
         return True
 
-    def get(self, key, dest_path, ignore_if_not_exists=True):
+    def get(self, key, dest_path, ignore_if_not_exist=True):
         try:
             self.transfer.download_file(self.bucket, key, dest_path)
         except ClientError as e:
-            if e.response['Error']['Code'] == '404' and ignore_if_not_exists:
+            if e.response['Error']['Code'] == '404' and ignore_if_not_exist:
                 return False
             else:
                 raise

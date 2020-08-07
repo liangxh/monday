@@ -81,7 +81,6 @@ class SessionManager(object):
         # [why]
         # scoped_session 在底层会引用当前 线程/协程 的实例, 不会影响其他 线程/协程
         ident = get_ident()
-        print(len(cls.__local_sessions__[ident]))
         for session in cls.__local_sessions__.pop(ident, list()):
             session.remove()
 
